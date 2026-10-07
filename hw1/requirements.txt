@@ -1,0 +1,15 @@
+# Task 1 / Task 2 依赖
+scikit-learn
+pandas
+numpy
+nltk
+gensim
+
+# Task 3 BERT 依赖（体积较大，单独说明）
+# ---- CPU 版本（没有 NVIDIA 显卡）：
+#   pip install torch transformers --index-url https://download.pytorch.org/whl/cpu
+# ---- GPU 版本（有 NVIDIA 显卡，先确认自己 CUDA 版本再装对应的 torch）：
+#   普通网络：pip install torch transformers
+#   国内加速：可加 -i https://pypi.tuna.tsinghua.edu.cn/simple
+transformers
+torch

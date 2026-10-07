@@ -1,0 +1,26 @@
+# 数据与大文件不要传 GitHub（几个 G，仓库会很大）
+HW-1/*.csv
+HW-1/*.txt
+HW-1/*.zip
+HW-1/bert-base-uncased/
+
+# 本地安装包/临时大文件
+*.whl
+*.zip
+
+# BERT 训练产物与缓存
+results/
+*.bin
+*.safetensors
+.cache/
+
+# Python 缓存与虚拟环境
+__pycache__/
+*.pyc
+venv/
+.venv/
+.env
+
+# 系统文件
+.DS_Store
+Thumbs.db
