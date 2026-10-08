@@ -92,7 +92,8 @@ python task3_bert.py       # Task 3
   三个 Task 复用同一划分，结果统一在测试集上报告。
 - 词向量统一为 **100 维**，文档向量为有效词向量的平均；Task 1、2 分类器均为
   Logistic Regression。
-- BERT 使用 `bert-base-uncased`，最大序列长度 64，训练 3 个 epoch。
+- BERT 使用 `bert-base-uncased`，最大序列长度 64，训练 3 个 epoch，
+  训练 batch size 16；GPU 上自动启用半精度（fp16）。
 
 ## 实验结果
 
@@ -103,7 +104,7 @@ python task3_bert.py       # Task 3
 | Task 2 — GloVe 平均向量 + LR | 0.9774 | 0.9468 |
 | Task 2 — AG News 自训 Word2Vec + LR | 0.9722 | 0.9358 |
 | Task 2 — NYT 自训 Word2Vec + LR | 0.9731 | 0.9377 |
-| Task 3 — BERT fine-tune | - | - |
+| Task 3 — BERT fine-tune | 0.9792 | 0.9582 |
 
 ## 结果分析
 
@@ -112,6 +113,14 @@ python task3_bert.py       # Task 3
 - **Task 2 三组对比**：预训练 GloVe 效果最好（语料规模大、词覆盖全）；
   在 NYT 训练集上自训的 Word2Vec 略优于在 AG News 上自训，说明同领域语料
   学到的词向量对目标任务更有针对性（AG News 语料虽大但领域不同）。
+- **BERT 明显优于 Task 2 的平均词向量**（Macro-F1 0.9582 对 0.94 上下），
+  体现了上下文相关表示与微调的优势；但并未超过使用全文的词袋
+  （词频 BoW Macro-F1 0.9621）。
+- **BERT 未超越词袋的原因**：本任务为主题分类、类别词汇区分度高，词袋 + LR
+  已接近性能天花板；更关键的是按要求 `max_length=64` 截断，而 NYT 文档平均
+  约 637 词，BERT 实际只看到文章开头，丢失大量主体内容，而 Task 1/2 使用了
+  全文。验证集在第 2 个 epoch 达到峰值（Accuracy 0.9852 / Macro-F1 0.9663），
+  第 3 个 epoch 略有回落，存在轻微过拟合迹象。
 - NYT 类别分布不均衡（sports 占多数），Accuracy 整体偏高，应以 Macro-F1
   综合衡量模型在 business / politics 等小类别上的表现。
 

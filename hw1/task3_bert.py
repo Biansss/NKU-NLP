@@ -19,7 +19,7 @@ from transformers import (
 )
 
 from data_utils import load_nyt, split_nyt, make_label_map, DATA_DIR
-from eval_utils import evaluate
+from eval_utils import evaluate, accuracy, macro_f1
 
 # 优先加载随项目下载的本地模型目录，缺失时回退到 Hugging Face 在线仓库
 _LOCAL_BERT = os.path.join(DATA_DIR, "bert-base-uncased")
@@ -35,10 +35,17 @@ EVAL_BATCH = 32
 def tokenize_texts(texts, tokenizer):
     """使用 BERT 分词器将文本编码为 input_ids 与 attention_mask。
 
-    统一截断、填充到 max_length=MAX_LENGTH，超长文本在该长度处截断。
-    返回可按样本索引的批量编码（不预先转为张量，由 NewsDataset 转换）。
+    统一截断、填充到 max_length=MAX_LENGTH，超长文本在该长度处截断；
+    所有样本等长，可直接按批堆叠。返回可按样本索引的批量编码
+    （不预先转为张量，由 NewsDataset 转换）。
     """
-    raise NotImplementedError
+    encodings = tokenizer(
+        list(texts),
+        truncation=True,
+        padding="max_length",
+        max_length=MAX_LENGTH,
+    )
+    return encodings
 
 
 class NewsDataset(Dataset):
@@ -58,8 +65,17 @@ class NewsDataset(Dataset):
 
 
 def compute_metrics(eval_pred):
-    """计算评估阶段的 Accuracy 与 Macro-F1，作为 Trainer 的指标回调。"""
-    raise NotImplementedError
+    """计算评估阶段的 Accuracy 与 Macro-F1，作为 Trainer 的指标回调。
+
+    eval_pred.predictions 为各类别的 logits，label_ids 为整数类别 id。
+    """
+    logits, labels = eval_pred
+    preds = np.argmax(np.asarray(logits), axis=-1)
+    labels = np.asarray(labels)
+    return {
+        "accuracy": float(accuracy(labels, preds)),
+        "macro_f1": float(macro_f1(labels, preds)),
+    }
 
 
 def main():
@@ -92,6 +108,7 @@ def main():
         eval_strategy="epoch",
         save_strategy="no",
         logging_steps=100,
+        fp16=torch.cuda.is_available(),
         report_to=[],
     )
 
