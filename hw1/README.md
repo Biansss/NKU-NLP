@@ -100,8 +100,8 @@ python task3_bert.py      # Task 3
 
 | 实验 | Accuracy | Macro-F1 |
 |---|---|---|
-| Task 1 — Binary BoW + LR | - | - |
-| Task 1 — Word Frequency + LR | - | - |
+| Task 1 — Binary BoW + LR | 0.9826 | 0.9576 |
+| Task 1 — Word Frequency + LR | 0.9826 | 0.9621 |
 | Task 2 — GloVe 平均向量 + LR | - | - |
 | Task 2 — AG News 自训 Word2Vec + LR | - | - |
 | Task 2 — NYT 自训 Word2Vec + LR | - | - |

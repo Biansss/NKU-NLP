@@ -26,12 +26,20 @@ def build_bow_features(train_texts, val_texts, test_texts, binary: bool):
         词表仅在训练集上拟合（fit），验证/测试集只做 transform，
         避免测试集信息泄漏到特征构建阶段。
     """
-    raise NotImplementedError
+    # analyzer 直接使用本项目统一的分词器（其内部已转小写）；
+    # binary=True 得到 0/1 二值词袋，binary=False 得到词频计数。
+    vectorizer = CountVectorizer(analyzer=tokenize, binary=binary)
+    X_train = vectorizer.fit_transform(train_texts)
+    X_val = vectorizer.transform(val_texts)
+    X_test = vectorizer.transform(test_texts)
+    return X_train, X_val, X_test
 
 
 def train_and_predict_lr(X_train, y_train, X_test):
     """在特征矩阵上训练 Logistic Regression，并返回测试集预测标签。"""
-    raise NotImplementedError
+    clf = LogisticRegression(max_iter=1000)
+    clf.fit(X_train, y_train)
+    return clf.predict(X_test)
 
 
 def run_one(splits, binary: bool):
