@@ -16,7 +16,9 @@ import numpy as np
 from gensim.models import Word2Vec
 from sklearn.linear_model import LogisticRegression
 
-from data_utils import load_nyt, load_ag, split_nyt, tokenize, GLOVE_TXT
+from data_utils import (
+    load_nyt, load_ag, split_nyt, tokenize, GLOVE_TXT, RANDOM_SEED,
+)
 from eval_utils import evaluate
 
 VECTOR_SIZE = 100
@@ -33,7 +35,15 @@ def load_glove(path: str = GLOVE_TXT, limit: int = None) -> dict:
     返回:
         {word: np.ndarray(shape=(100,), dtype=float32)} 字典。
     """
-    raise NotImplementedError
+    embeddings = {}
+    with open(path, "r", encoding="utf-8") as f:
+        for idx, line in enumerate(f):
+            if limit is not None and idx >= limit:
+                break
+            values = line.split()
+            word = values[0]
+            embeddings[word] = np.asarray(values[1:], dtype=np.float32)
+    return embeddings
 
 
 def train_word2vec(sentences, vector_size: int = VECTOR_SIZE) -> Word2Vec:
@@ -43,9 +53,18 @@ def train_word2vec(sentences, vector_size: int = VECTOR_SIZE) -> Word2Vec:
         sentences: 分词语料，每个元素为一篇文档的词列表 List[List[str]]。
 
     返回:
-        训练完成的 gensim Word2Vec 模型。
+        训练完成的 gensim Word2Vec 模型（CBOW，固定随机种子）。
     """
-    raise NotImplementedError
+    model = Word2Vec(
+        sentences=sentences,
+        vector_size=vector_size,
+        window=5,
+        min_count=5,
+        workers=4,
+        epochs=5,
+        seed=RANDOM_SEED,
+    )
+    return model
 
 
 def w2v_to_dict(model: Word2Vec) -> dict:
@@ -60,7 +79,10 @@ def doc_vector(tokens, embeddings: dict) -> np.ndarray:
     仅对在 embeddings 中存在的词（有效词）求平均，未登录词（OOV）跳过；
     若文档不含任何有效词则返回全 0 向量，避免除零。
     """
-    raise NotImplementedError
+    vectors = [embeddings[w] for w in tokens if w in embeddings]
+    if len(vectors) == 0:
+        return np.zeros(VECTOR_SIZE, dtype=np.float32)
+    return np.mean(np.stack(vectors), axis=0)
 
 
 def corpus_to_matrix(texts, embeddings: dict) -> np.ndarray:
@@ -69,7 +91,10 @@ def corpus_to_matrix(texts, embeddings: dict) -> np.ndarray:
     返回:
         shape 为 (文档数, 100) 的 np.ndarray。
     """
-    raise NotImplementedError
+    matrix = np.zeros((len(texts), VECTOR_SIZE), dtype=np.float32)
+    for i, text in enumerate(texts):
+        matrix[i] = doc_vector(tokenize(text), embeddings)
+    return matrix
 
 
 def run_with_embeddings(splits, embeddings: dict, experiment: str):

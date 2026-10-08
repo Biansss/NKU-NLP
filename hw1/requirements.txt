@@ -12,4 +12,5 @@ gensim
 #   普通网络：pip install torch transformers
 #   国内加速：可加 -i https://pypi.tuna.tsinghua.edu.cn/simple
 transformers
+accelerate
 torch

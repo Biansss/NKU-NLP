@@ -27,19 +27,14 @@
 │   ├── nyt.csv                 #   NYT 主数据集
 │   ├── ag.csv                  #   AG News，用于训练 Word2Vec
 │   ├── glove.6B.100d.txt       #   GloVe 100 维词向量
-│   └── bert-base-uncased/      #   本地 BERT 模型（可离线加载）
+│   └── bert-base-uncased/      #   本地 BERT 模型（可选，缺失则自动在线下载）
 ├── data_utils.py               # 数据加载、固定划分、分词、标签映射
 ├── eval_utils.py               # Accuracy / Macro-F1
 ├── task1_bow.py                # Task 1：词袋 + Logistic Regression
 ├── task2_word2vec.py           # Task 2：GloVe / Word2Vec + Logistic Regression
 ├── task3_bert.py               # Task 3：BERT 微调
-├── env_check.py                # 依赖 / GPU / NLTK 资源自检
-├── smoke_test.py               # GPU、gensim 与 transformers 兼容性冒烟测试
-├── verify_assets.py            # 数据、GloVe 与本地 BERT 可用性校验
-├── download_bert.py            # 下载 bert-base-uncased 到本地
-├── extract_glove.py            # 从 glove.6B.zip 提取 100 维向量
-├── requirements.txt
-└── README.md
+├── requirements.txt            # 依赖清单
+└── README.md                   # 运行说明
 ```
 
 ## 环境配置
@@ -52,8 +47,8 @@ conda activate nlp-hw1
 pip install -r requirements.txt
 ```
 
-实测版本：torch 2.14.1+cu126（GPU）、transformers 5.19.0、scikit-learn 1.9.1、
-gensim 4.4.0、nltk 3.10.3、accelerate 1.15.0。
+实测版本：torch 2.14.1+cu126（GPU）、transformers 5.19.0、accelerate 1.15.0、
+scikit-learn 1.9.1、gensim 4.4.0、nltk 3.10.3、pandas 3.0.6、numpy 2.4.6。
 
 > 注意：PyPI 默认安装的 torch 为 CPU 版本；如需 GPU 版，请按
 > <https://pytorch.org/get-started/locally/> 选择对应 CUDA 的 index-url 安装。
@@ -62,30 +57,33 @@ gensim 4.4.0、nltk 3.10.3、accelerate 1.15.0。
 
 ## 数据与预训练模型准备
 
-`HW-1/` 目录不纳入版本管理，需按下列方式准备：
+`HW-1/` 目录体积较大、不纳入版本管理，请按下列方式自行准备：
 
 1. 将 `nyt.csv`、`ag.csv` 放入 `HW-1/`。
-2. GloVe：下载 <http://nlp.stanford.edu/data/glove.6B.zip> 放入 `HW-1/`，
-   运行 `python extract_glove.py`，仅提取所需的 `glove.6B.100d.txt`。
-3. BERT：运行 `python download_bert.py` 下载到 `HW-1/bert-base-uncased/`。
-   国内网络可先设置镜像：
+2. **GloVe**：从 <http://nlp.stanford.edu/data/glove.6B.zip> 下载压缩包，
+   解压后把 `glove.6B.100d.txt` 放入 `HW-1/`（本作业只使用 100 维这一份）。
+3. **BERT**：`task3_bert.py` 默认优先加载本地目录 `HW-1/bert-base-uncased/`；
+   若该目录不存在，则自动从 Hugging Face 下载 `google-bert/bert-base-uncased`。
+   国内网络可先设置镜像环境变量：
    ```powershell
    $env:HF_ENDPOINT = "https://hf-mirror.com"
    $env:HF_HUB_DISABLE_XET = "1"
    ```
-   `task3_bert.py` 会优先离线加载该本地目录，缺失时才回退到在线仓库。
+   如需预先下载到本地，可执行：
+   ```bash
+   huggingface-cli download google-bert/bert-base-uncased \
+       --local-dir HW-1/bert-base-uncased
+   ```
 
 ## 运行方式
 
 ```bash
 conda activate nlp-hw1
 
-python env_check.py       # 检查依赖、GPU 与 NLTK 资源
-python verify_assets.py   # 检查数据、GloVe 与本地 BERT
-python data_utils.py      # 检查数据读取与划分（train≈9215 / val≈1152 / test≈1152）
-python task1_bow.py       # Task 1
-python task2_word2vec.py  # Task 2
-python task3_bert.py      # Task 3
+python data_utils.py       # 数据读取与划分自检（train≈9215 / val≈1152 / test≈1152）
+python task1_bow.py        # Task 1
+python task2_word2vec.py   # Task 2
+python task3_bert.py       # Task 3
 ```
 
 ## 实验设置
@@ -102,18 +100,26 @@ python task3_bert.py      # Task 3
 |---|---|---|
 | Task 1 — Binary BoW + LR | 0.9826 | 0.9576 |
 | Task 1 — Word Frequency + LR | 0.9826 | 0.9621 |
-| Task 2 — GloVe 平均向量 + LR | - | - |
-| Task 2 — AG News 自训 Word2Vec + LR | - | - |
-| Task 2 — NYT 自训 Word2Vec + LR | - | - |
+| Task 2 — GloVe 平均向量 + LR | 0.9774 | 0.9468 |
+| Task 2 — AG News 自训 Word2Vec + LR | 0.9722 | 0.9358 |
+| Task 2 — NYT 自训 Word2Vec + LR | 0.9731 | 0.9377 |
 | Task 3 — BERT fine-tune | - | - |
+
+## 结果分析
+
+- **词袋整体略优于平均词向量**：平均词向量把整篇文档压缩为单个 100 维向量，
+  丢失了词频与区分性词汇信息，因此 Task 2 略低于 Task 1。
+- **Task 2 三组对比**：预训练 GloVe 效果最好（语料规模大、词覆盖全）；
+  在 NYT 训练集上自训的 Word2Vec 略优于在 AG News 上自训，说明同领域语料
+  学到的词向量对目标任务更有针对性（AG News 语料虽大但领域不同）。
+- NYT 类别分布不均衡（sports 占多数），Accuracy 整体偏高，应以 Macro-F1
+  综合衡量模型在 business / politics 等小类别上的表现。
 
 ## 备注
 
 - 加载 BERT 时出现 `UNEXPECTED ... cls.predictions / cls.seq_relationship` 与
   `MISSING classifier.weight / classifier.bias` 属于正常现象：前者为未使用的
   预训练 MLM/NSP 头，后者为下游分类任务随机初始化、需要微调的分类头。
-- NYT 类别分布不均衡（sports 占多数），因此 Accuracy 可能偏高，
-  应以 Macro-F1 综合衡量各类别表现。
 
 ## 参考
 
