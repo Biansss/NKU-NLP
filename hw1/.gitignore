@@ -41,3 +41,6 @@ Thumbs.db
 *.nav
 *.snm
 *.vrb
+
+# LaTeX 报告源码工程仅保留在本地/Overleaf，仓库只提交最终 PDF
+report/
