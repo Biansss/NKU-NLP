@@ -69,7 +69,6 @@ rulesepcolor= \color{ red!20!green!20!blue!20}
 \usepackage{fancyhdr}
 \usepackage{tabularx}
 \usepackage{geometry}
-\usepackage{cite}       % 参考文献数字引用
 \usepackage{float}
 \usepackage{multirow}
 \usepackage{booktabs}
@@ -104,7 +103,6 @@ rulesepcolor= \color{ red!20!green!20!blue!20}
 \renewcommand{\contentsname}{目\ 录}
 \renewcommand{\appendixname}{附录}
 \renewcommand{\appendixpagename}{附录}
-\renewcommand{\refname}{参考文献}
 \renewcommand{\figurename}{图}
 \renewcommand{\tablename}{表}
 \renewcommand{\today}{\number\year 年 \number\month 月 \number\day 日}
@@ -232,7 +230,7 @@ NYT 的类别分布并不均衡，如表~\ref{tab:data} 所示，\texttt{sports}
 需要强调的是，\textbf{三个任务始终复用同一份划分}，最终性能统一在测试集（NYT Test Set）上报告，
 保证六种实验设置之间的结果可以直接比较。
 
-预处理方面，Task~1 和 Task~2 使用 NLTK\cite{bird2009nltk} 的 \texttt{word\_tokenize} 进行英文分词，并统一转为小写
+预处理方面，Task~1 和 Task~2 使用 NLTK 的 \texttt{word\_tokenize} 进行英文分词，并统一转为小写
 （预训练 GloVe 词表本身为全小写，统一大小写可以减少未登录词，也保证各方法预处理口径一致）。
 Task~3 不使用这一分词器，而是使用 BERT 自带的 WordPiece 子词分词器。为了避免数据泄漏，词袋的词表、
 Word2Vec 词向量都只在\textbf{训练集}上学习，验证集和测试集只做相同的变换；在 NYT 上自训的
@@ -337,7 +335,7 @@ Logistic Regression 在这种特征上通常已经有很好的表现。
 
 \subsection{实现细节}
 
-直接使用 scikit-learn\cite{pedregosa2011scikit} 的 \texttt{CountVectorizer} 构建词袋，\texttt{analyzer} 指定为
+直接使用 scikit-learn 的 \texttt{CountVectorizer} 构建词袋，\texttt{analyzer} 指定为
 项目统一的分词函数（其内部已完成小写化），通过 \texttt{binary} 开关在二值词袋与词频之间切换。
 关键点在于\textbf{词表只在训练集上 \texttt{fit} 一次}，验证集、测试集仅做 \texttt{transform}，
 杜绝测试集信息泄漏。本数据集构建出的词表规模为 127{,}018 维。核心代码如下：
@@ -389,9 +387,9 @@ y_pred = clf.predict(X_test)
 词向量（word embedding）则把每个词映射为一个低维、稠密的实值向量，向量之间的距离和方向
 能够编码语义相似性，其理论基础是分布式假设：\emph{出现在相似上下文中的词往往具有相似的含义}。
 
-\textbf{Word2Vec}\cite{mikolov2013efficient,mikolov2013distributed} 是最具代表性的词向量学习方法之一，包含 CBOW 和 Skip-gram 两种结构。
-本实验使用 gensim\cite{rehurek2010gensim} 默认的 CBOW：在一个上下文窗口内，用周围词的向量预测中心词，
-训练完成后，网络的权重视为每个词的稠密向量。\textbf{GloVe}\cite{pennington2014glove} 则走另一条路线，它先基于全局
+\textbf{Word2Vec} 是最具代表性的词向量学习方法之一，包含 CBOW 和 Skip-gram 两种结构。
+本实验使用 gensim 默认的 CBOW：在一个上下文窗口内，用周围词的向量预测中心词，
+训练完成后，网络的权重视为每个词的稠密向量。\textbf{GloVe} 则走另一条路线，它先基于全局
 语料统计词与词的共现次数，再通过矩阵分解让词向量的点积拟合共现的对数加权值，从而同时利用
 全局统计信息和局部上下文信息。
 
@@ -471,10 +469,10 @@ AG News 上自训的 Word2Vec 次之，仅用 NYT 训练集自训的略低；三
 \subsection{方法原理}
 
 BERT（Bidirectional Encoder Representations from Transformers）建立在多层 Transformer
-编码器之上\cite{vaswani2017attention}，核心是多头自注意力机制。与单向语言模型不同，BERT
+编码器之上，核心是多头自注意力机制。与单向语言模型不同，BERT
 通过掩码语言模型（MLM）和下一句预测（NSP）两个预训练任务，在大规模通用语料上学习到了
 真正双向的上下文表示，同一个词在不同语境下会得到不同的向量，这从根本上区别于
-Task~2 中“一个词只有一个固定向量”的静态词向量\cite{devlin2019bert}。
+Task~2 中“一个词只有一个固定向量”的静态词向量。
 
 用于分类时，BERT 采用 WordPiece 子词分词，在序列首尾分别加上特殊标记 \texttt{[CLS]\_}
 与 \texttt{[SEP]\_}，把 \texttt{[CLS]\_} 对应的最终隐状态接入一个线性分类头，输出各类别 logits。
@@ -483,7 +481,7 @@ Task~2 中“一个词只有一个固定向量”的静态词向量\cite{devlin2
 
 \subsection{实现细节}
 
-使用 Hugging Face Transformers 实现\cite{wolf2020transformers}。代码优先加载随项目下载到本地的
+使用 Hugging Face Transformers 实现。代码优先加载随项目下载到本地的
 \texttt{HW-1/bert-base-uncased}，目录缺失时再回退到在线仓库。分词时按作业要求设置
 \texttt{max\_length=64}，超长截断、不足则填充到等长：
 
@@ -739,8 +737,5 @@ python task3_bert.py        # Task 3: BERT fine-tuning
 \end{lstlisting}
 
 \runshot[0.9\textwidth]{shot_data}{数据读取与划分自检结果：终端打印 NYT 总条数、train/val/test 划分条数与分词示例}{fig:shot-data}
-
-\bibliographystyle{plain}
-\bibliography{reference}
 
 \end{document}
