@@ -129,9 +129,3 @@ python task3_bert.py       # Task 3
 - 加载 BERT 时出现 `UNEXPECTED ... cls.predictions / cls.seq_relationship` 与
   `MISSING classifier.weight / classifier.bias` 属于正常现象：前者为未使用的
   预训练 MLM/NSP 头，后者为下游分类任务随机初始化、需要微调的分类头。
-
-## 参考
-
-- Pennington, J., Socher, R., & Manning, C. D. (2014). *GloVe: Global Vectors for Word Representation.*
-- Mikolov, T., et al. (2013). *Efficient Estimation of Word Representations in Vector Space.*
-- Devlin, J., et al. (2019). *BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding.*
